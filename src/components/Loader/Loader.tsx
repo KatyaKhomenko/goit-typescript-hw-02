@@ -1,20 +1,23 @@
-import { Grid } from 'react-loader-spinner';
-import css from './Loader.module.css';
+import { FC } from 'react';
+import { ColorRing } from 'react-loader-spinner';
 
-const Loader: React.FC = () => {
+const Loader: FC = () => {
   return (
-    <div className={css.loader}>
-      <Grid
-        visible={true}
-        height="80"
-        width="80"
-        color="#286FF0"
-        ariaLabel="grid-loading"
-        radius="12.5"
-        wrapperStyle={{}}
-        wrapperClass={css.grid_wrapper}
-      />
-    </div>
+    <ColorRing
+      visible={true}
+      height="80"
+      width="80"
+      ariaLabel="color-ring-loading"
+      wrapperStyle={{
+        display: 'block',
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+      }}
+      wrapperClass="color-ring-wrapper"
+      colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
+    />
   );
 };
 

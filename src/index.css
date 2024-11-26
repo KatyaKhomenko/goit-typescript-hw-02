@@ -1,23 +1,4 @@
-#root {
-  max-width: 320px;
-  padding: 10px;
-  padding-top: 0;
-  margin: 0 auto;
-  text-align: center;
-}
-
-@media (min-width: 768px) {
-  #root {
-    max-width: 768px;
-  }
-}
-
-@media (min-width: 1200px) {
-  #root {
-    max-width: 1200px;
-    padding-inline: 20px;
-  }
-}
+@import '../node_modules/modern-normalize/modern-normalize.css';
 
 h1,
 h2,
@@ -29,25 +10,23 @@ p {
   margin: 0;
 }
 
-ul,
-ol {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
+p:last-child {
+  margin-bottom: 0;
 }
 
-button {
+ul {
+  margin: 0;
   padding: 0;
-  border: none;
-  font: inherit;
-  color: inherit;
-  background-color: transparent;
-  cursor: pointer;
+  list-style: none;
 }
 
 a {
+  color: currentColor;
   text-decoration: none;
-  color: inherit;
+}
+
+button {
+  cursor: pointer;
 }
 
 img {

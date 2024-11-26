@@ -1,115 +1,115 @@
-import { useState, useEffect } from 'react';
-import ErrorMessage from '../ErrorMessage/ErrorMessage';
-import ImageGallery from '../ImageGallery/ImageGallery';
-import ImageModal from '../ImageModal/ImageModal';
-import Loader from '../Loader/Loader';
-import LoadMoreBtn from '../LoadMoreBtn/LoadMoreBtn';
+import { useState, useEffect, FormEvent, MouseEvent } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+
+import { getPhotosBySearchValue } from '../../services/photos';
+
 import SearchBar from '../SearchBar/SearchBar';
-import { IData, IImageData, IPage } from './App.types';
-import { getPhotos } from '../../apiService/photos';
+import ImageGallery from '../ImageGallery/ImageGallery';
+import Loader from '../Loader/Loader';
+import EmptyResultMessage from '../EmptyResultMessage/EmptyResultMessage';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
+import LoadMoreButton from '../LoadMoreBtn/LoadMoreBtn';
+import ImageModal from '../ImageModal/ImageModal';
+import { Image } from './App.types';
+import './App.module.css';
 
-const App: React.FC<{}> = () => {
-  const [query, setQuery] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<IImageData[]>([]);
-  const [error, setError] = useState<boolean | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+const App = () => {
+  const [searchValue, setSearchValue] = useState<string | null>(null);
+  const [images, setImages] = useState<Image[] | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalImages, setTotalImages] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [page, setPage] = useState<IPage>({
-    currentPage: 1,
-    totalPages: 0,
-  });
-  const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
-  const [selectedImage, setSelectedImage] = useState<IImageData | null>(null);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isShowModal, setIsShowModal] = useState<boolean>(false);
+  const [modalData, setModalData] = useState<Image | null>(null);
 
-  const onSubmit = (query: string): void => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setPage({ currentPage: 1, totalPages: 0 });
-    setQuery(query);
-    setError(null);
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    setImages(null);
+    setIsError(false);
+    setCurrentPage(1);
+    setModalData(null);
   };
 
-  const onLoadMore: () => void = () => {
-    setPage(prevPage => ({
-      ...prevPage,
-      currentPage: prevPage.currentPage + 1,
-    }));
-  };
-
-  const openModal = (imageData: IImageData): void => {
-    if (!modalIsOpen || selectedImage !== imageData) {
-      setModalIsOpen(true);
-      setSelectedImage(imageData);
-    }
-  };
-
-  const onClose: () => void = () => {
-    setModalIsOpen(false);
-    setSelectedImage(null);
-  };
-
-  useEffect((): void => {
-    if (!query) return;
-
-    const getData = async (): Promise<void> => {
+  useEffect(() => {
+    if (searchValue) {
       setIsLoading(true);
+    }
+
+    const getPhotos = async () => {
       try {
-        const data: IData = await getPhotos(query, page.currentPage);
-        console.log(data);
-
-        setPage(prevPage => ({
-          ...prevPage,
-          totalPages: data.total_pages,
-        }));
-
-        setPhotos(prevPhotos =>
-          page.currentPage === 1
-            ? data.results
-            : [...prevPhotos, ...data.results]
-        );
-      } catch (error) {
-        console.log(error, 'catch');
-
-        if (error instanceof Error) {
-          console.log(error);
-          setError(true);
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage('Unknown error occurred');
+        if (!searchValue) {
+          return;
         }
+
+        const { results, total } = await getPhotosBySearchValue(
+          searchValue,
+          currentPage
+        );
+
+        if (currentPage === 1) setImages(results);
+
+        if (currentPage > 1 && images !== null)
+          setImages([...images, ...results]);
+
+        setTotalImages(total);
+      } catch (error) {
+        if (error instanceof Error) toast.error(error.message);
+        setIsError(true);
       } finally {
         setIsLoading(false);
       }
     };
-    getData();
-  }, [page.currentPage, query]);
+    getPhotos();
+  }, [searchValue, currentPage]);
+
+  const onLoadMore = () => {
+    setCurrentPage(prevPage => prevPage + 1);
+  };
+
+  const scrollMore = () => {
+    window.scrollBy({
+      top: 338,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
-    if (page.currentPage > 1) {
-      const scrollValue = window.innerHeight / 1.5;
-      window.scrollBy({
-        top: scrollValue,
-        behavior: 'smooth',
-      });
-    }
-  }, [photos]);
+    if (currentPage > 1) scrollMore();
+  }, [images, currentPage]);
+
+  const onShowModal = (e: MouseEvent<HTMLImageElement>) => {
+    setIsShowModal(true);
+
+    const filteredImage = images?.filter(
+      ({ urls: { small } }) => (e.target as HTMLImageElement).src === small
+    );
+
+    if (filteredImage) setModalData(filteredImage[0]);
+  };
+
+  const onCloseModal = () => {
+    setIsShowModal(false);
+  };
 
   return (
     <>
-      <SearchBar onSubmit={onSubmit} />
-      {query && <ImageGallery photos={photos} isOpen={openModal} />}
+      <SearchBar onSearch={handleSearch} />
+      <ImageGallery images={images} onShowModal={onShowModal} />
       {isLoading && <Loader />}
-      {error && <ErrorMessage error={errorMessage} />}
-      {page.totalPages > page.currentPage && (
-        <LoadMoreBtn onClick={onLoadMore} />
+      {images && totalImages === 0 && <EmptyResultMessage />}
+      {isError && <ErrorMessage />}
+      {images?.length !== totalImages && totalImages !== null && (
+        <LoadMoreButton onLoadMore={onLoadMore} />
       )}
-
-      {modalIsOpen && selectedImage && (
+      {modalData && (
         <ImageModal
-          isOpen={modalIsOpen}
-          onClose={onClose}
-          selectedImage={selectedImage}
+          isOpen={isShowModal}
+          closeModal={onCloseModal}
+          modalData={modalData}
         />
       )}
+      <Toaster position="bottom-right" />
     </>
   );
 };

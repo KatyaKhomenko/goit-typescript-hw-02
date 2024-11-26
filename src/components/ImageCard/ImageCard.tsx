@@ -1,13 +1,25 @@
-import { ImageCardProps } from './ImageCard.types';
+import { FC, MouseEvent } from 'react';
 import css from './ImageCard.module.css';
 
-const ImageCard: React.FC<ImageCardProps> = ({ photo }) => {
+type Props = {
+  urls: { small: string };
+  alt_description: string;
+  onShowModal: (e: MouseEvent<HTMLImageElement>) => void;
+};
+
+const ImageCard: FC<Props> = ({
+  urls: { small },
+  alt_description,
+  onShowModal,
+}) => {
   return (
-    <div className={css.thumb}>
+    <div>
       <img
-        src={photo.urls.small}
-        alt={photo.alt_description}
-        className={css.img}
+        className={css.image}
+        src={small}
+        alt={alt_description}
+        loading="lazy"
+        onClick={onShowModal}
       />
     </div>
   );
